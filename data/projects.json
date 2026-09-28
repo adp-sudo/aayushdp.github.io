@@ -7,6 +7,58 @@
   "links": [],
   "projects": [
     {
+      "id": "mulksv8y",
+      "media": [
+        {
+          "type": "image",
+          "src": "assets/1790620350964-WhatsApp_Image_2026-09-13_at_10.36.39.jpeg",
+          "name": "WhatsApp Image 2026-09-13 at 10.36.39.jpeg"
+        },
+        {
+          "type": "image",
+          "src": "assets/1790620353446-WhatsApp_Image_2026-09-13_at_10.36.37.jpeg",
+          "name": "WhatsApp Image 2026-09-13 at 10.36.37.jpeg"
+        },
+        {
+          "type": "image",
+          "src": "assets/1790620355799-WhatsApp_Image_2026-09-12_at_17.02.12.jpeg",
+          "name": "WhatsApp Image 2026-09-12 at 17.02.12.jpeg"
+        },
+        {
+          "type": "image",
+          "src": "assets/1790620357709-WhatsApp_Image_2026-09-12_at_16.48.20.jpeg",
+          "name": "WhatsApp Image 2026-09-12 at 16.48.20.jpeg"
+        },
+        {
+          "type": "image",
+          "src": "assets/1790620359932-WhatsApp_Image_2026-09-12_at_16.48.17.jpeg",
+          "name": "WhatsApp Image 2026-09-12 at 16.48.17.jpeg"
+        },
+        {
+          "type": "image",
+          "src": "assets/1790620362534-WhatsApp_Image_2026-09-12_at_16.47.52.jpeg",
+          "name": "WhatsApp Image 2026-09-12 at 16.47.52.jpeg"
+        }
+      ],
+      "title": "Canard Based Actuator and Multimodal Fuze for a 155mm Artillery Shell",
+      "description": "project for the smart india hackathon 2026. uses canards along with an algorithm running pid and areal inversion to calculate correction angles needed to create pressure differentials",
+      "tags": [
+        "sih",
+        "ESP32"
+      ],
+      "links": [
+        {
+          "label": "DEMO VIDEO",
+          "url": "https://youtu.be/Rej6q3vEDI0"
+        },
+        {
+          "label": "Github Repo",
+          "url": "https://github.com/giribeans29/SIH26098_Development_of_LowCost_PrecisionGuidance_and_Smart_Electronic_Fuze_For_A_155mArtilleryShell/blob/main/README.md"
+        }
+      ],
+      "cover": "assets/1790620348212-Screenshot_2026-09-13_112649.png"
+    },
+    {
       "id": "muljthbp",
       "media": [],
       "title": "Helmet Based Accident Detection System for Two Wheelers",

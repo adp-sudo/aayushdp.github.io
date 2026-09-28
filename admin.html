@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Dashboard</title>
+<style>
+:root{--bg:#fff;--fg:#000;--mute:#666;--line:#d8d8d8}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--fg:#fff;--mute:#999;--line:#333}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
+main{max-width:680px;margin:0 auto;padding:40px 20px 96px}
+h1{font-size:1.6rem;margin:0 0 4px}
+h2{font-size:1.1rem;margin:40px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+label{display:block;margin:14px 0 4px;font-size:.9rem}
+input,textarea{width:100%;padding:8px 10px;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--fg);border-radius:0}
+textarea{min-height:90px;resize:vertical}
+input[type=file]{border:1px dashed var(--mute);padding:10px}
+button{font:inherit;padding:8px 16px;margin:16px 8px 0 0;color:var(--bg);background:var(--fg);border:1px solid var(--fg);cursor:pointer}
+button.ghost{color:var(--fg);background:var(--bg)}
+button:disabled{opacity:.5;cursor:wait}
+.mute{color:var(--mute);font-size:.9rem}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item button{margin:0 0 0 6px;padding:4px 10px;font-size:.85rem}
+.hidden{display:none}
+#status{position:fixed;left:0;right:0;bottom:0;padding:10px 20px;background:var(--fg);color:var(--bg);font-size:.9rem}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Dashboard</h1>
+  <p class="mute">Changes are saved straight to your GitHub repo. The live site updates about a minute after each save.</p>
+
+  <section id="connect">
+    <h2>Connect</h2>
+    <label for="owner">GitHub username</label><input id="owner">
+    <label for="repo">Repository name</label><input id="repo">
+    <label for="branch">Branch</label><input id="branch" value="main">
+    <label for="token">Access token</label><input id="token" type="password" autocomplete="off">
+    <p class="mute">Stored only in this browser. Use a fine-grained token limited to this one repo with Contents set to read and write.</p>
+    <button id="connectBtn">Connect</button>
+  </section>
+
+  <div id="app" class="hidden">
+    <h2>About you</h2>
+    <label for="pName">Name</label><input id="pName">
+    <label for="pTag">One line description</label><input id="pTag">
+    <label for="pAbout">About</label><textarea id="pAbout"></textarea>
+    <label for="lnks">Links and resources (one per line, as Label | URL)</label><textarea id="lnks"></textarea>
+    <button id="saveProfile">Save</button>
+
+    <h2>Projects</h2>
+    <div id="list"></div>
+
+    <h2 id="formTitle">Add a project</h2>
+    <label for="title">Title</label><input id="title">
+    <label for="desc">Description</label><textarea id="desc"></textarea>
+    <label for="tags">Tags (comma separated)</label><input id="tags">
+    <label for="cover">Cover image</label><input id="cover" type="file" accept="image/*">
+    <label for="media">Photos, videos, documents</label><input id="media" type="file" multiple>
+    <p class="mute">Keep files under about 50 MB. For long videos, upload to YouTube and add the link below.</p>
+    <div id="existing"></div>
+    <label for="plinks">Project links (one per line, as Label | URL)</label><textarea id="plinks"></textarea>
+    <button id="saveProject">Save project</button>
+    <button id="cancelEdit" class="ghost hidden">Cancel</button>
+  </div>
+</main>
+<div id="status" class="hidden"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const KEY='site_admin';
+let cfg=JSON.parse(localStorage.getItem(KEY)||'{}'),data,sha,draft=null,editing=null;
+
+// Guess repo details when opened from a github.io address
+if(!cfg.owner&&location.hostname.endsWith('.github.io')){
+  cfg.owner=location.hostname.split('.')[0];
+  cfg.repo=location.pathname.split('/')[1]||location.hostname;
+}
+['owner','repo','branch','token'].forEach(k=>{if(cfg[k])$(k).value=cfg[k]});
+
+const note=(m,keep)=>{const s=$('status');s.textContent=m;s.classList.remove('hidden');if(!keep)setTimeout(()=>s.classList.add('hidden'),3500)};
+
+// GitHub helpers
+const api=(path,opt={})=>fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`+(opt.method?'':`?ref=${cfg.branch}`),
+  {...opt,headers:{Authorization:'Bearer '+cfg.token,Accept:'application/vnd.github+json'}});
+const enc=s=>{let r='';new TextEncoder().encode(s).forEach(c=>r+=String.fromCharCode(c));return btoa(r)};
+const dec=b=>new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g,'')),c=>c.charCodeAt(0)));
+const fileB64=f=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result.split(',')[1]);r.onerror=no;r.readAsDataURL(f)});
+async function put(path,content,message,sha){
+  const r=await api(path,{method:'PUT',body:JSON.stringify({message,content,branch:cfg.branch,...(sha?{sha}:{})})});
+  const j=await r.json();if(!r.ok)throw new Error(j.message);return j;
+}
+async function upload(file){
+  const path='assets/'+Date.now()+'-'+file.name.replace(/[^\w.\-]+/g,'_');
+  await put(path,await fileB64(file),'Add '+file.name);return path;
+}
+const kind=f=>f.type.startsWith('image/')?'image':f.type.startsWith('video/')?'video':'file';
+async function saveData(message){
+  const j=await put('data/projects.json',enc(JSON.stringify(data,null,2)),message,sha);
+  sha=j.content.sha;
+}
+const parseLinks=t=>t.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const [a,...b]=l.split('|');return b.length?{label:a.trim(),url:b.join('|').trim()}:{label:l,url:l}});
+const showLinks=a=>(a||[]).map(l=>l.label+' | '+l.url).join('\n');
+
+// Connect and load
+$('connectBtn').onclick=async()=>{
+  cfg={owner:$('owner').value.trim(),repo:$('repo').value.trim(),branch:$('branch').value.trim()||'main',token:$('token').value.trim()};
+  try{
+    note('Connecting...',1);
+    const r=await api('data/projects.json');
+    if(r.status===401)throw new Error('Token was rejected. Check that it is correct and has not expired.');
+    if(r.status===404){data={profile:{},links:[],projects:[]};sha=null}
+    else if(!r.ok)throw new Error((await r.json()).message);
+    else{const j=await r.json();sha=j.sha;data=JSON.parse(dec(j.content))}
+    localStorage.setItem(KEY,JSON.stringify(cfg));
+    $('connect').classList.add('hidden');$('app').classList.remove('hidden');
+    $('pName').value=data.profile?.name||'';$('pTag').value=data.profile?.tagline||'';
+    $('pAbout').value=data.profile?.about||'';$('lnks').value=showLinks(data.links);
+    renderList();resetForm();note('Connected');
+  }catch(e){note('Could not connect: '+e.message)}
+};
+if(cfg.token&&cfg.owner&&cfg.repo)$('connectBtn').click();
+
+// About and links
+$('saveProfile').onclick=async()=>{
+  data.profile={name:$('pName').value,tagline:$('pTag').value,about:$('pAbout').value};
+  data.links=parseLinks($('lnks').value);
+  try{note('Saving...',1);await saveData('Update profile and links');note('Saved')}catch(e){note('Error: '+e.message)}
+};
+
+// Projects
+function renderList(){
+  const box=$('list');box.textContent='';
+  if(!data.projects.length){box.innerHTML='<p class="mute">No projects yet.</p>';return}
+  data.projects.forEach((p,i)=>{
+    const row=document.createElement('div');row.className='item';
+    const t=document.createElement('span');t.textContent=p.title;
+    const b=document.createElement('span');
+    const up=(txt,fn)=>{const x=document.createElement('button');x.className='ghost';x.textContent=txt;x.onclick=fn;b.append(x)};
+    up('Edit',()=>{editing=i;draft=structuredClone(p);fillForm();scrollTo(0,document.body.scrollHeight)});
+    up('Delete',async()=>{
+      if(!confirm('Remove "'+p.title+'" from the site?'))return;
+      data.projects.splice(i,1);
+      try{note('Saving...',1);await saveData('Remove project: '+p.title);renderList();note('Removed')}catch(e){note('Error: '+e.message)}
+    });
+    row.append(t,b);box.append(row);
+  });
+}
+function resetForm(){
+  editing=null;draft={id:Date.now().toString(36),media:[]};
+  ['title','desc','tags','plinks'].forEach(k=>$(k).value='');
+  $('cover').value='';$('media').value='';
+  $('formTitle').textContent='Add a project';$('cancelEdit').classList.add('hidden');renderExisting();
+}
+function fillForm(){
+  $('title').value=draft.title||'';$('desc').value=draft.description||'';
+  $('tags').value=(draft.tags||[]).join(', ');$('plinks').value=showLinks(draft.links);
+  $('cover').value='';$('media').value='';
+  $('formTitle').textContent='Edit project';$('cancelEdit').classList.remove('hidden');renderExisting();
+}
+function renderExisting(){
+  const box=$('existing');box.textContent='';
+  draft.media.forEach((m,i)=>{
+    const row=document.createElement('div');row.className='item';
+    const s=document.createElement('span');s.textContent=m.name||m.src;
+    const x=document.createElement('button');x.className='ghost';x.textContent='Remove';
+    x.onclick=()=>{draft.media.splice(i,1);renderExisting()};
+    row.append(s,x);box.append(row);
+  });
+}
+$('cancelEdit').onclick=resetForm;
+$('saveProject').onclick=async()=>{
+  if(!$('title').value.trim())return note('Add a title first');
+  const btn=$('saveProject');btn.disabled=true;
+  try{
+    Object.assign(draft,{
+      title:$('title').value.trim(),description:$('desc').value.trim(),
+      tags:$('tags').value.split(',').map(s=>s.trim()).filter(Boolean),
+      links:parseLinks($('plinks').value)
+    });
+    const cover=$('cover').files[0];
+    if(cover){note('Uploading cover...',1);draft.cover=await upload(cover)}
+    const files=[...$('media').files];
+    for(let i=0;i<files.length;i++){
+      note(`Uploading file ${i+1} of ${files.length}...`,1);
+      draft.media.push({type:kind(files[i]),src:await upload(files[i]),name:files[i].name});
+    }
+    if(editing===null)data.projects.unshift(draft);else data.projects[editing]=draft;
+    note('Saving...',1);await saveData((editing===null?'Add project: ':'Update project: ')+draft.title);
+    renderList();resetForm();note('Saved. Live in about a minute.');
+  }catch(e){note('Error: '+e.message)}
+  btn.disabled=false;
+};
+</script>
+</body>
+</html>

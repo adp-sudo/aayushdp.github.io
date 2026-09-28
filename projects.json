@@ -1,0 +1,11 @@
+{
+  "profile": {
+    "name": "Aayush",
+    "tagline": "ECE student at NIT Warangal",
+    "about": "A collection of things I have built. Hardware, software, and everything in between."
+  },
+  "links": [
+    { "label": "GitHub", "url": "https://github.com/" }
+  ],
+  "projects": []
+}

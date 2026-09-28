@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects</title>
+<style>
+:root{--bg:#fff;--fg:#000;--mute:#666;--line:#d8d8d8}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--fg:#fff;--mute:#999;--line:#333}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 Georgia,"Times New Roman",serif}
+main{max-width:720px;margin:0 auto;padding:56px 20px 96px}
+h1{font-size:2.2rem;line-height:1.15;margin:0 0 6px}
+h2{font-size:1.25rem;margin:64px 0 20px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+h3{font-size:1.3rem;margin:0 0 4px}
+a{color:var(--fg)}
+.mute{color:var(--mute)}
+.project{padding:0 0 40px;margin:0 0 40px;border-bottom:1px solid var(--line)}
+.project:last-child{border:0}
+.cover{width:100%;max-height:380px;object-fit:cover;display:block;margin:12px 0}
+.tags{font-size:.9rem;color:var(--mute);margin:0 0 8px}
+.media{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:14px 0}
+.media img,.media video{width:100%;display:block}
+.row a{margin-right:18px}
+:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 id="name"></h1>
+    <p class="mute" id="tagline"></p>
+    <p id="about"></p>
+  </header>
+  <h2>Projects</h2>
+  <section id="projects"></section>
+  <h2 id="linksHead">Links and resources</h2>
+  <section id="links"></section>
+</main>
+<script>
+const el=(t,a={},...k)=>{const e=document.createElement(t);for(const x in a){x==='text'?e.textContent=a[x]:e.setAttribute(x,a[x])}k.flat().filter(Boolean).forEach(c=>e.append(c));return e};
+const link=l=>el('a',{href:l.url,target:'_blank',rel:'noopener',text:l.label});
+
+fetch('data/projects.json?'+Date.now()).then(r=>r.json()).then(d=>{
+  const p=d.profile||{};
+  document.title=p.name||'Projects';
+  name.textContent=p.name||'My projects';
+  tagline.textContent=p.tagline||'';
+  about.textContent=p.about||'';
+
+  const box=document.getElementById('projects');
+  if(!(d.projects||[]).length) box.append(el('p',{class:'mute',text:'No projects yet.'}));
+  (d.projects||[]).forEach(pr=>{
+    const visual=[],files=[];
+    (pr.media||[]).forEach(m=>{
+      if(m.type==='image')visual.push(el('a',{href:m.src,target:'_blank'},el('img',{src:m.src,alt:m.name||'',loading:'lazy'})));
+      else if(m.type==='video')visual.push(el('video',{src:m.src,controls:'',preload:'metadata'}));
+      else files.push(el('a',{href:m.src,target:'_blank',text:m.name||'Download file'}));
+    });
+    box.append(el('article',{class:'project'},
+      el('h3',{text:pr.title}),
+      (pr.tags||[]).length?el('p',{class:'tags',text:pr.tags.join(', ')}):null,
+      pr.cover?el('img',{class:'cover',src:pr.cover,alt:pr.title,loading:'lazy'}):null,
+      el('p',{text:pr.description||''}),
+      visual.length?el('div',{class:'media'},visual):null,
+      (pr.links||[]).length||files.length?el('div',{class:'row'},(pr.links||[]).map(link),files):null
+    ));
+  });
+
+  const ls=document.getElementById('links');
+  const all=d.links||[];
+  if(!all.length){ls.remove();linksHead.remove()}
+  all.forEach(l=>ls.append(el('p',{},link(l))));
+}).catch(()=>{document.getElementById('projects').textContent='Could not load projects.'});
+</script>
+</body>
+</html>

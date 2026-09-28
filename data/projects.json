@@ -1,14 +1,9 @@
 {
   "profile": {
     "name": "Aayush Deshpande",
-    "tagline": "poop",
-    "about": "test"
+    "tagline": "nitw ece, built to show my projects",
+    "about": "love to play games, tinker and mess around with electronics"
   },
-  "links": [
-    {
-      "label": "tet",
-      "url": "tet"
-    }
-  ],
+  "links": [],
   "projects": []
 }

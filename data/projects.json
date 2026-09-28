@@ -19,6 +19,10 @@
         {
           "label": "DEMO VIDEO",
           "url": "https://youtu.be/ObbcprkjDKQ"
+        },
+        {
+          "label": "Github Repo",
+          "url": "https://github.com/adp-sudo/Helmet-Based-Accident-Detection-and-Alert-System"
         }
       ],
       "cover": "assets/1790619592062-proto.jpeg"

@@ -5,5 +5,23 @@
     "about": "love to play games, tinker and mess around with electronics"
   },
   "links": [],
-  "projects": []
+  "projects": [
+    {
+      "id": "muljthbp",
+      "media": [],
+      "title": "Helmet Based Accident Detection System for Two Wheelers",
+      "description": "uses a combinations of sensors to detect occurrence of an accident, then relay the location over to a nearby hospital and oved ones",
+      "tags": [
+        "ESP32",
+        "IoT"
+      ],
+      "links": [
+        {
+          "label": "DEMO VIDEO",
+          "url": "https://youtu.be/ObbcprkjDKQ"
+        }
+      ],
+      "cover": "assets/1790619592062-proto.jpeg"
+    }
+  ]
 }

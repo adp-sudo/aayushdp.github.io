@@ -82,7 +82,7 @@
   ],
   "inProgress": [
     {
-      "title": "building a pc from scratch",
+      "title": "building a cpu from scratch",
       "note": "using vivado and basic first principles, makign a pc that with a custom isa and can run programs like tetris",
       "url": ""
     },

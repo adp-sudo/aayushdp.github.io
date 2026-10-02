@@ -79,5 +79,12 @@
       ],
       "cover": "assets/1790619592062-proto.jpeg"
     }
+  ],
+  "inProgress": [
+    {
+      "title": "Improving S-Box Architecture in AES Encryption",
+      "note": "replicating a ieee paper and producing positive results + planning on adding opcode checking as a novelty",
+      "url": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10146260"
+    }
   ]
 }

@@ -82,6 +82,11 @@
   ],
   "inProgress": [
     {
+      "title": "building a pc from scratch",
+      "note": "using vivado and basic first principles, makign a pc that with a custom isa and can run programs like tetris",
+      "url": ""
+    },
+    {
       "title": "Modeling GAAFET process flow in Semulator3D",
       "note": "learning and modelling process flow for effective Gate-All-Around FET",
       "url": "https://medium.com/predict/introduction-to-gaafet-the-next-big-phase-of-computer-chip-manufacturing-84e63abe11dd"

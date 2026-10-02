@@ -22,6 +22,7 @@ button.ghost{color:var(--fg);background:var(--bg)}
 button:disabled{opacity:.5;cursor:wait}
 .mute{color:var(--mute);font-size:.9rem}
 .item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .item button{margin:0 0 0 6px;padding:4px 10px;font-size:.85rem}
 .hidden{display:none}
 #status{position:fixed;left:0;right:0;bottom:0;padding:10px 20px;background:var(--fg);color:var(--bg);font-size:.9rem}
@@ -50,6 +51,15 @@ button:disabled{opacity:.5;cursor:wait}
     <label for="pAbout">About</label><textarea id="pAbout"></textarea>
     <label for="lnks">Links and resources (one per line, as Label | URL)</label><textarea id="lnks"></textarea>
     <button id="saveProfile">Save</button>
+
+    <h2>In progress</h2>
+    <p class="mute">Shows in the sidebar on the site. For things you are currently building, not finished projects.</p>
+    <div id="ipList"></div>
+    <label for="ipTitle">Title</label><input id="ipTitle">
+    <label for="ipNote">Short note</label><textarea id="ipNote"></textarea>
+    <label for="ipLink">Link (optional)</label><input id="ipLink" placeholder="https://">
+    <button id="saveIp">Save</button>
+    <button id="cancelIp" class="ghost hidden">Cancel</button>
 
     <h2>Projects</h2>
     <div id="list"></div>
@@ -112,14 +122,14 @@ $('connectBtn').onclick=async()=>{
     note('Connecting...',1);
     const r=await api('data/projects.json');
     if(r.status===401)throw new Error('Token was rejected. Check that it is correct and has not expired.');
-    if(r.status===404){data={profile:{},links:[],projects:[]};sha=null}
+    if(r.status===404){data={profile:{},links:[],projects:[],inProgress:[]};sha=null}
     else if(!r.ok)throw new Error((await r.json()).message);
-    else{const j=await r.json();sha=j.sha;data=JSON.parse(dec(j.content))}
+    else{const j=await r.json();sha=j.sha;data=JSON.parse(dec(j.content));data.inProgress=data.inProgress||[]}
     localStorage.setItem(KEY,JSON.stringify(cfg));
     $('connect').classList.add('hidden');$('app').classList.remove('hidden');
     $('pName').value=data.profile?.name||'';$('pTag').value=data.profile?.tagline||'';
     $('pAbout').value=data.profile?.about||'';$('lnks').value=showLinks(data.links);
-    renderList();resetForm();note('Connected');
+    renderList();resetForm();renderIpList();resetIpForm();note('Connected');
   }catch(e){note('Could not connect: '+e.message)}
 };
 if(cfg.token&&cfg.owner&&cfg.repo)$('connectBtn').click();
@@ -129,6 +139,45 @@ $('saveProfile').onclick=async()=>{
   data.profile={name:$('pName').value,tagline:$('pTag').value,about:$('pAbout').value};
   data.links=parseLinks($('lnks').value);
   try{note('Saving...',1);await saveData('Update profile and links');note('Saved')}catch(e){note('Error: '+e.message)}
+};
+
+// In progress
+let ipEditing=null;
+function renderIpList(){
+  const box=$('ipList');box.textContent='';
+  if(!data.inProgress.length){box.innerHTML='<p class="mute">Nothing listed.</p>';return}
+  data.inProgress.forEach((x,i)=>{
+    const row=document.createElement('div');row.className='item';
+    const t=document.createElement('span');t.textContent=x.title;
+    const b=document.createElement('span');
+    const up=(txt,fn)=>{const btn=document.createElement('button');btn.className='ghost';btn.textContent=txt;btn.onclick=fn;b.append(btn)};
+    up('Edit',()=>{ipEditing=i;fillIpForm(x)});
+    up('Delete',async()=>{
+      if(!confirm('Remove "'+x.title+'"?'))return;
+      data.inProgress.splice(i,1);
+      try{note('Saving...',1);await saveData('Remove in-progress item: '+x.title);renderIpList();note('Removed')}catch(e){note('Error: '+e.message)}
+    });
+    row.append(t,b);box.append(row);
+  });
+}
+function resetIpForm(){
+  ipEditing=null;$('ipTitle').value='';$('ipNote').value='';$('ipLink').value='';
+  $('cancelIp').classList.add('hidden');
+}
+function fillIpForm(x){
+  $('ipTitle').value=x.title||'';$('ipNote').value=x.note||'';$('ipLink').value=x.url||'';
+  $('cancelIp').classList.remove('hidden');
+}
+$('cancelIp').onclick=resetIpForm;
+$('saveIp').onclick=async()=>{
+  if(!$('ipTitle').value.trim())return note('Add a title first');
+  const item={title:$('ipTitle').value.trim(),note:$('ipNote').value.trim(),url:$('ipLink').value.trim()};
+  if(ipEditing===null)data.inProgress.unshift(item);else data.inProgress[ipEditing]=item;
+  try{
+    note('Saving...',1);
+    await saveData((ipEditing===null?'Add in-progress item: ':'Update in-progress item: ')+item.title);
+    renderIpList();resetIpForm();note('Saved');
+  }catch(e){note('Error: '+e.message)}
 };
 
 // Projects

@@ -9,9 +9,17 @@
 @media(prefers-color-scheme:dark){:root{--bg:#000;--fg:#fff;--mute:#999;--line:#333}}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--fg);font:17px/1.65 Georgia,"Times New Roman",serif}
-main{max-width:720px;margin:0 auto;padding:56px 20px 96px}
+.layout{max-width:980px;margin:0 auto;padding:56px 20px 96px;display:grid;grid-template-columns:200px 1fr;gap:56px;align-items:start}
+.sidebar{position:sticky;top:40px}
+.sidebar h2{font-size:.95rem;font-family:system-ui,sans-serif;margin:0 0 18px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.ip-item{margin:0 0 20px}
+.ip-item h3{font-size:1rem;margin:0 0 3px;font-weight:bold}
+.ip-item p{margin:0;font-size:.9rem;color:var(--mute);line-height:1.5}
+.ip-item a{font-size:.9rem}
+main{min-width:0}
 h1{font-size:2.2rem;line-height:1.15;margin:0 0 6px}
 h2{font-size:1.25rem;margin:64px 0 20px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+main>h2:first-of-type{margin-top:0}
 h3{font-size:1.3rem;margin:0 0 4px}
 a{color:var(--fg)}
 .mute{color:var(--mute)}
@@ -23,20 +31,31 @@ a{color:var(--fg)}
 .media img,.media video{width:100%;display:block}
 .row a{margin-right:18px}
 :focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+@media(max-width:680px){
+  .layout{grid-template-columns:1fr;gap:40px;padding:40px 20px 80px}
+  .sidebar{position:static;order:2}
+  main{order:1}
+}
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1 id="name"></h1>
-    <p class="mute" id="tagline"></p>
-    <p id="about"></p>
-  </header>
-  <h2>Projects</h2>
-  <section id="projects"></section>
-  <h2 id="linksHead">Links and resources</h2>
-  <section id="links"></section>
-</main>
+<div class="layout">
+  <aside class="sidebar">
+    <h2>In progress</h2>
+    <div id="inprogress"></div>
+  </aside>
+  <main>
+    <header>
+      <h1 id="name"></h1>
+      <p class="mute" id="tagline"></p>
+      <p id="about"></p>
+    </header>
+    <h2>Projects</h2>
+    <section id="projects"></section>
+    <h2 id="linksHead">Links and resources</h2>
+    <section id="links"></section>
+  </main>
+</div>
 <script>
 const el=(t,a={},...k)=>{const e=document.createElement(t);for(const x in a){x==='text'?e.textContent=a[x]:e.setAttribute(x,a[x])}k.flat().filter(Boolean).forEach(c=>e.append(c));return e};
 const link=l=>el('a',{href:l.url,target:'_blank',rel:'noopener',text:l.label});
@@ -47,6 +66,17 @@ fetch('data/projects.json?'+Date.now()).then(r=>r.json()).then(d=>{
   name.textContent=p.name||'My projects';
   tagline.textContent=p.tagline||'';
   about.textContent=p.about||'';
+
+  const ip=document.getElementById('inprogress');
+  const ipItems=d.inProgress||[];
+  if(!ipItems.length) ip.append(el('p',{class:'mute',text:'Nothing right now.'}));
+  ipItems.forEach(x=>{
+    ip.append(el('div',{class:'ip-item'},
+      el('h3',{text:x.title}),
+      x.note?el('p',{text:x.note}):null,
+      x.url?el('p',{},el('a',{href:x.url,target:'_blank',rel:'noopener',text:'Link'})):null
+    ));
+  });
 
   const box=document.getElementById('projects');
   if(!(d.projects||[]).length) box.append(el('p',{class:'mute',text:'No projects yet.'}));

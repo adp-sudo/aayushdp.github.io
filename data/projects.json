@@ -82,6 +82,11 @@
   ],
   "inProgress": [
     {
+      "title": "Modeling GAAFET process flow in Semulator3D",
+      "note": "learning and modelling process flow for effective Gate-All-Around FET",
+      "url": "https://medium.com/predict/introduction-to-gaafet-the-next-big-phase-of-computer-chip-manufacturing-84e63abe11dd"
+    },
+    {
       "title": "Improving S-Box Architecture in AES Encryption",
       "note": "replicating a ieee paper and producing positive results + planning on adding opcode checking as a novelty",
       "url": "https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10146260"
